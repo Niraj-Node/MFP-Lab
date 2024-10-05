@@ -3,10 +3,19 @@ DATA SEGMENT
 	LCM DW 0              
 DATA ENDS
 
+MY_STACK SEGMENT STACK
+	DW 20 DUP(0)           
+	STACK_TOP LABEL WORD   
+MY_STACK ENDS
+
 CODE SEGMENT
-	ASSUME CS:CODE, DS:DATA
+	ASSUME CS:CODE, DS:DATA, SS:MY_STACK
+
 	MOV AX, DATA           
-	MOV DS, AX
+	MOV DS, AX             
+	MOV AX, MY_STACK       
+	MOV SS, AX             
+	MOV SP, STACK_TOP   
   
 	; Set up pointers to NUM and LCM using SI and DI
 	LEA SI, NUM           
