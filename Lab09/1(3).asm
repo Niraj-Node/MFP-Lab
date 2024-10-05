@@ -1,55 +1,61 @@
 DATA SEGMENT
-  NUM DW 0005,0007
-  LCM DW 2 DUP(0)
+	NUM DW 0005,0007      
+	LCM DW 0              
 DATA ENDS
 
 MY_STACK SEGMENT STACK
-	DW 20 DUP(0)
-	STACK_TOP LABEL WORD
+	DW 20 DUP(0)           
+	STACK_TOP LABEL WORD   
 MY_STACK ENDS
 
 CODE SEGMENT
-	ASSUME CS:CODE,DS:DATA,SS:MY_STACK
-	MOV AX,DATA
-	MOV DS,AX
-	MOV AX,MY_STACK
-	MOV SS,AX
-	MOV SI,STACK_TOP
+	ASSUME CS:CODE, DS:DATA, SS:MY_STACK
 
-	MOV SI, OFFSET NUM
-	MOV DI, OFFSET LCM
-	MOV AX, WORD PTR [SI]
-	MOV BX, WORD PTR [SI+2]
-	MOV CX, AX
-	MOV DX, BX
+	MOV AX, DATA           
+	MOV DS, AX             
+	MOV AX, MY_STACK       
+	MOV SS, AX             
+	MOV SP, STACK_TOP      
+  
+	; Push the values of NUM and NUM+2 onto the stack
+	LEA SI, NUM            
+	PUSH WORD PTR [SI]     
+	PUSH WORD PTR [SI+2]   
 
-	CALL MY_PROC	
-	MOV AX, 4C00H
+	CALL CALC_LCM
+
+	; Store result (LCM) in memory location LCM
+	LEA DI, LCM            
+	POP AX				; Result is still on the stack, copy it to AX
+	MOV [DI], AX           
+
+	MOV AX, 4C00H          
 	INT 21H
 
-	MY_PROC PROC NEAR
-		PUSH AX
-		PUSH BX
-		PUSH CX
-		PUSH DX
+CALC_LCM PROC NEAR
+	PUSH BP                
+	MOV BP, SP             
+  
+	MOV AX, [BP+4]         
+	MOV BX, [BP+6]         
+	MOV CX, AX             
+	MOV DX, BX             
 
-		repeat: NOP
-		CMP AX, BX
-		JE STORE
-		JC ASMALLER
-		ADD BX, DX
-		JMP repeat
-		ASMALLER: NOP
-		ADD AX, CX
-		JMP repeat
+	repeat:
+	  CMP AX, BX             
+	  JE OVER                
+	  JC ASMALLER            
+	  ADD BX, DX             
+	  JMP repeat            
+	ASMALLER:
+	  ADD AX, CX             
+	  JMP repeat
 
-		STORE: NOP
-		MOV WORD PTR[DI], AX
-		POP DX
-		POP CX
-		POP BX
-		POP AX
-		RET
-	MY_PROC ENDP
-CODE ENDS 
+	OVER:
+	  MOV [BP+4], AX         
+	  POP BP                 
+	  RET                    
+CALC_LCM ENDP
+
+CODE ENDS
 END
